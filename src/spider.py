@@ -9,6 +9,8 @@ import urllib.error
 import urllib.parse
 import urllib.robotparser
 
+from indexer import Indexer
+
 from bs4 import BeautifulSoup
 
 class Spider:
@@ -25,6 +27,10 @@ class Spider:
         
         self.seeds = ["https://www.uwindsor.ca"] # Crawling starts from here
         self.urls = []
+        self._load_indexer()
+
+    def _load_indexer(self):
+        self.indexer = Indexer()
 
     def get_http_response(self, url):
         """
@@ -76,6 +82,7 @@ class Spider:
         
         # TODO - Write the indexing logic 
         self.urls.append(url)
+        self.indexer.index_html_page(url, html_text)
 
     def run(self):
         """
@@ -118,9 +125,6 @@ class Spider:
                     q.append(link)
         
             depth += 1
-        
-        for i in self.urls:
-            print(i)
 
 s = Spider()
 s.run()
