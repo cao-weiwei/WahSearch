@@ -13,9 +13,9 @@ from bs4 import BeautifulSoup
 
 class Spider:
     """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-    爬网的蜘蛛 - The spider that will crawl the web
-    使用给定的种子并通过它们爬行 - Use the given seeds and crawl through them
-    途中收集网页并对其进行存储/索引 - Collect webpages on the way and store/index them
+    The spider that will crawl the web
+    Use the given seeds and crawl through them
+    Collect webpages on the way and store/index them
     """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
     def __init__(self):
@@ -23,7 +23,7 @@ class Spider:
         Constructor 
         """
         
-        self.seeds = ["https://www.google.com/"]
+        self.seeds = ["https://www.uwindsor.ca"] # Crawling starts from here
         self.urls = []
 
     def get_http_response(self, url):
@@ -56,10 +56,9 @@ class Spider:
         links = parser.find_all('a') # Fetch anchor tags
 
         hrefs = []
+
         for link in links:
             href = link.get('href')
-
-            # Sanitize link
             abs_href = urllib.parse.urljoin(url, href) # Handle relative links
             # abs_href = abs_href.split('?')[0]
             abs_href = abs_href.split('#')[0] # Remove fragment identifier
@@ -83,7 +82,7 @@ class Spider:
         The entry point
         """
 
-        max_depth = 200 #fetch only max_dept number of webpages
+        max_depth = 20000 #fetch only max_dept number of webpages
         depth = 0 #initial depth
         visited = {} #keep track of visited links to avoid cycle
         
@@ -94,27 +93,26 @@ class Spider:
             
             print ("At depth ", depth)
             
-            url = q[-1]
+            url = q.pop(0)
 
             # get html response and index the page
             http_response = self.get_http_response(url)
-            q.pop()
-            if not http_response:
+            visited[url] = True
+
+            if not http_response: # Skip if page not retrieved
                 continue
-            
+
             html_text = http_response.read()
             response_url = http_response.geturl()
-            if visited.get(response_url):
+            
+            if url != response_url and visited.get(response_url):
                 continue
-            
-            self.index_page(url, html_text)
-            
-            # mark visited links to avoid cycles in BFS
-            visited[url] = True
-            visited[response_url] = True
 
-            links = self.get_links(url, html_text)
-        
+            visited[response_url] = True  # mark visited links to avoid cycles in BFS
+            self.index_page(url, html_text) # Index the retrieved webpage
+            links = self.get_links(url, html_text) # Get links from the current page
+
+            # Push the new found links to ToCrawl list [BFS]
             for link in links:
                 if not visited.get(link):
                     q.append(link)
