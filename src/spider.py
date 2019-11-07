@@ -66,7 +66,6 @@ class Spider:
         for link in links:
             href = link.get('href')
             abs_href = urllib.parse.urljoin(url, href) # Handle relative links
-            # abs_href = abs_href.split('?')[0]
             abs_href = abs_href.split('#')[0] # Remove fragment identifier
             hrefs.append(abs_href)
 
@@ -98,25 +97,35 @@ class Spider:
 
         while len(q) and depth < max_depth:
             
-            print ("At depth ", depth)
+            print ("Page ", depth)
             
             url = q.pop(0)
+            visited[url] = True
 
             # get html response and index the page
             http_response = self.get_http_response(url)
-            visited[url] = True
 
             if not http_response: # Skip if page not retrieved
                 continue
 
-            html_text = http_response.read()
-            response_url = http_response.geturl()
-            
+            html_text = None
+            response_url = None
+            try:
+                html_text = http_response.read() # HTML text
+                response_url = http_response.geturl() # Final URL after redirection
+            except Exception:
+                continue
+
             if url != response_url and visited.get(response_url):
                 continue
 
             visited[response_url] = True  # mark visited links to avoid cycles in BFS
-            self.index_page(url, html_text) # Index the retrieved webpage
+            
+            try:
+                self.index_page(url, html_text) # Index the retrieved webpage
+            except Exception:
+                print ("Error while indexing ", response_url)
+            
             links = self.get_links(url, html_text) # Get links from the current page
 
             # Push the new found links to ToCrawl list [BFS]

@@ -28,7 +28,6 @@ class Indexer:
         stop_words_list = stop_word_data.split('\n')
 
         self.stop_words = dict.fromkeys(stop_words_list, True)
-        print (self.stop_words)
 
     def _index_word(self):
         pass
@@ -61,18 +60,20 @@ class Indexer:
         title_words = [self.stemmer.stem(word) for word in title.strip().split() if not self.stop_words.get(word)]
         body_words = [self.stemmer.stem(word) for word in body.strip().split() if not self.stop_words.get(word)]
 
+        # Get word table with frequence
+        word_dict = {}
+
         # Process title words
         for title_word in title_words:
             if not self.stop_words.get(title_word):
                 word = self.stemmer.stem(title_word)
-                print (word) # Consume word
+                # TODO: Decide on title's weught
+                word_dict[word] = word_dict.get(word,0) + 1
 
         # Process body words
-        word_dict = {}
         for body_word in body_words:
             if not self.stop_words.get(body_word):
                 word = self.stemmer.stem(body_word)
-                print (word) # Consume word
                 word_dict[word] = word_dict.get(word,0) + 1
         
         for word in word_dict:
@@ -89,7 +90,7 @@ class Indexer:
             }
 
             update_status = self.mycol.update(query, upd)
-            updated = update_status['updatedExisting']
+            updated = update_status.get('updatedExisting')
 
             if not updated:
                 upd = dict()
