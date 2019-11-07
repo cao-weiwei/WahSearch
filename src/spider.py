@@ -88,7 +88,7 @@ class Spider:
         The entry point
         """
 
-        max_depth = 20000 #fetch only max_dept number of webpages
+        max_depth = 3000 #fetch only max_dept number of webpages
         depth = 0 #initial depth
         visited = {} #keep track of visited links to avoid cycle
         

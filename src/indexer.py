@@ -12,17 +12,29 @@ from bs4 import BeautifulSoup
 class Indexer:
 
     def __init__(self):
+        """
+        Constructor
+        """
+
         self.stemmer = nltk.SnowballStemmer("english")
         self._load_stop_words()
         self.load_mongo_client()
 
     def load_mongo_client(self):
+        """
+        Load the mongoDB handler
+        """
+
         import pymongo
         myclient = pymongo.MongoClient("mongodb://localhost:27017/")
         mydb = myclient["wah_search"]
         self.mycol = mydb["index"]
 
     def _load_stop_words(self):
+        """
+        Load stop words in memory
+        """
+        
         stop_words_file = open("./stop_words.dat")
         stop_word_data = stop_words_file.read()
         stop_words_list = stop_word_data.split('\n')
@@ -33,6 +45,13 @@ class Indexer:
         pass
 
     def index_html_page(self, doc_name, doc_content):
+        """
+        Parse the HTML page, fetch keywords and index them
+
+        doc_name    - The reference (URL) to the page
+        doc_content - THe HTML content of the page
+        """
+
         parser = BeautifulSoup(doc_content, 'html.parser') # Initialize parser
 
         # Get title
@@ -89,9 +108,11 @@ class Indexer:
                 "cnt": cnt
             }
 
+            # Append the page with count to the word->doc list
             update_status = self.mycol.update(query, upd)
             updated = update_status.get('updatedExisting')
 
+            # If the word is seen first time
             if not updated:
                 upd = dict()
                 upd[word] = [{"doc_id": doc_name, "cnt": cnt}]
