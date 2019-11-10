@@ -6,6 +6,8 @@ Author: Harsh Sodiwala
 
 import re
 import nltk
+import utils
+import math
 
 from bs4 import BeautifulSoup
 
@@ -16,8 +18,6 @@ class Indexer:
         Constructor
         """
 
-        self.stemmer = nltk.SnowballStemmer("english")
-        self._load_stop_words()
         self.load_mongo_client()
 
     def load_mongo_client(self):
@@ -28,21 +28,66 @@ class Indexer:
         import pymongo
         myclient = pymongo.MongoClient("mongodb://localhost:27017/")
         mydb = myclient["wah_search"]
-        self.mycol = mydb["index"]
+        self.index = mydb["index"]
+        self.docs = mydb["docs"]
 
-    def _load_stop_words(self):
-        """
-        Load stop words in memory
-        """
+    def index_words(self, words, doc_name):
+
+        # Generate table with word frequence
+        word_dict = {}
+
+        # Populate word dictionary
+        all_words = words
+        for word in utils.get_processed_words_list(all_words):
+            word_dict[word] = word_dict.get(word,0) + 1
         
-        stop_words_file = open("./stop_words.dat")
-        stop_word_data = stop_words_file.read()
-        stop_words_list = stop_word_data.split('\n')
+        # Calculate normalizing factor: Root of sum of squares of word frequencies
+        normalizing_factor = 0.0
+        for word in word_dict:
+            normalizing_factor += math.pow(word_dict[word], 2)
+        normalizing_factor = math.sqrt(normalizing_factor)
 
-        self.stop_words = dict.fromkeys(stop_words_list, True)
+        print ("Normalizer: ", normalizing_factor)
 
-    def _index_word(self):
-        pass
+        for word in word_dict:
+            cnt = word_dict[word]
+            # print ("Normalized frequency: ", word, cnt/normalizing_factor)
+            query = dict()
+            query[word] = {"$exists": True}
+            
+            # upd = {"$push": {word: {docId: count}}}
+            upd = dict()
+            upd["$push"] = dict()
+            upd["$push"][word] = {
+                "doc_id": doc_name,
+                "frequency": cnt,
+                "frequency_normalized": cnt / normalizing_factor
+            }
+
+            # Append the page with count to the word->doc list
+            update_status = self.index.update(query, upd)
+            updated = update_status.get('updatedExisting')
+
+            # If the word is seen first time
+            if not updated:
+                upd = dict()
+                upd[word] = [{"doc_id": doc_name, "frequency": cnt, "frequency_normalized": cnt / normalizing_factor}]
+                self.index.insert(upd)
+
+    def update_doc_list(self, doc_name):
+        q = {"pages.lst": {"$exists": True}}
+        if self.docs.find(q).count():
+            if not self.docs.find({"pages.lst": doc_name}).count():
+                self.docs.update({}, {"$inc": {"pages.cnt": 1}})
+                self.docs.update({}, {"$addToSet": {"pages.lst": doc_name}})
+
+        else:
+            self.docs.insert({
+                "pages": {
+                    "cnt":1,
+                    "lst": [doc_name]
+                }
+            })
 
     def index_html_page(self, doc_name, doc_content):
         """
@@ -76,47 +121,13 @@ class Indexer:
         # TODO - Take care of words that become like randomword34 after replacement
 
         # Get list of words from both
-        title_words = [self.stemmer.stem(word) for word in title.strip().split() if not self.stop_words.get(word)]
-        body_words = [self.stemmer.stem(word) for word in body.strip().split() if not self.stop_words.get(word)]
+        title_words = title.strip().split() * 3 # Title words are more important than body words
+        body_words = body.strip().split()
+        all_words = title_words + body_words
 
-        # Get word table with frequence
-        word_dict = {}
-
-        # Process title words
-        for title_word in title_words:
-            if not self.stop_words.get(title_word):
-                word = self.stemmer.stem(title_word)
-                # TODO: Decide on title's weught
-                word_dict[word] = word_dict.get(word,0) + 1
-
-        # Process body words
-        for body_word in body_words:
-            if not self.stop_words.get(body_word):
-                word = self.stemmer.stem(body_word)
-                word_dict[word] = word_dict.get(word,0) + 1
-        
-        for word in word_dict:
-            cnt = word_dict[word]
-            query = dict()
-            query[word] = {"$exists": True}
-            
-            # upd = {"$push": {word: {docId: count}}}
-            upd = dict()
-            upd["$push"] = dict()
-            upd["$push"][word] = {
-                "doc_id": doc_name,
-                "cnt": cnt
-            }
-
-            # Append the page with count to the word->doc list
-            update_status = self.mycol.update(query, upd)
-            updated = update_status.get('updatedExisting')
-
-            # If the word is seen first time
-            if not updated:
-                upd = dict()
-                upd[word] = [{"doc_id": doc_name, "cnt": cnt}]
-                self.mycol.insert(upd)
+        # Insert in the inverted index
+        self.index_words(all_words, doc_name)
+        self.update_doc_list(doc_name)
 
 if __name__ == "__main__":
     #test
@@ -127,4 +138,4 @@ if __name__ == "__main__":
     file.close()
 
     indexer = Indexer()
-    indexer.index_html_page("www.example2.com", data)
+    indexer.index_html_page("www.example1.com", data)
