@@ -8,6 +8,7 @@ import re
 import nltk
 import utils
 import math
+import functools
 
 from bs4 import BeautifulSoup
 
@@ -31,14 +32,14 @@ class Indexer:
         self.index = mydb["index"]
         self.docs = mydb["docs"]
 
-    def index_words(self, words, doc_name):
+    def index_words(self, words, doc_name, title, h1, h2, h3, h4):
 
         # Generate table with word frequence
         word_dict = {}
 
         # Populate word dictionary
-        all_words = words
-        for word in utils.get_processed_words_list(all_words):
+        all_words = utils.get_processed_words_list(words)
+        for word in all_words:
             word_dict[word] = word_dict.get(word,0) + 1
         
         # Calculate normalizing factor: Root of sum of squares of word frequencies
@@ -47,18 +48,19 @@ class Indexer:
             normalizing_factor += math.pow(word_dict[word], 2)
         normalizing_factor = math.sqrt(normalizing_factor)
 
+        normalizing_factor = len(all_words)
+
         print ("Normalizer: ", normalizing_factor)
 
         for word in word_dict:
             cnt = word_dict[word]
             # print ("Normalized frequency: ", word, cnt/normalizing_factor)
-            query = dict()
-            query[word] = {"$exists": True}
-            
+            query = {"word":word}
+
             # upd = {"$push": {word: {docId: count}}}
             upd = dict()
             upd["$push"] = dict()
-            upd["$push"][word] = {
+            upd["$push"]["doc_list"] = {
                 "doc_id": doc_name,
                 "frequency": cnt,
                 "frequency_normalized": cnt / normalizing_factor
@@ -71,22 +73,22 @@ class Indexer:
             # If the word is seen first time
             if not updated:
                 upd = dict()
-                upd[word] = [{"doc_id": doc_name, "frequency": cnt, "frequency_normalized": cnt / normalizing_factor}]
+                upd["word"] = word
+                upd["doc_list"] = [{"doc_id": doc_name, "frequency": cnt, "frequency_normalized": cnt / normalizing_factor}]
+                
                 self.index.insert(upd)
 
     def update_doc_list(self, doc_name):
-        q = {"pages.lst": {"$exists": True}}
+        q = {"lst": {"$exists": True}}
         if self.docs.find(q).count():
-            if not self.docs.find({"pages.lst": doc_name}).count():
-                self.docs.update({}, {"$inc": {"pages.cnt": 1}})
-                self.docs.update({}, {"$addToSet": {"pages.lst": doc_name}})
+            if not self.docs.find({"lst": doc_name}).count():
+                self.docs.update({}, {"$inc": {"cnt": 1}})
+                self.docs.update({}, {"$addToSet": {"lst": doc_name}})
 
         else:
             self.docs.insert({
-                "pages": {
                     "cnt":1,
                     "lst": [doc_name]
-                }
             })
 
     def index_html_page(self, doc_name, doc_content):
@@ -97,13 +99,14 @@ class Indexer:
         doc_content - THe HTML content of the page
         """
 
+        doc_content = doc_content.lower()
         parser = BeautifulSoup(doc_content, 'html.parser') # Initialize parser
 
         # Get title
         title = ""
         title_tag = parser.find('title')
         if title_tag:
-            title = title_tag.text.lower()
+            title = title_tag.text
 
         # Keep title and body words separate for now
         # TODO - Implementing word weightage in future
@@ -112,21 +115,33 @@ class Indexer:
         body = ""
         body_tag = parser.find('body')
         if title_tag:
-            body = body_tag.text.lower()
+            body = body_tag.text
 
         non_alpha_num_exp = r'[^a-z0-9 ]' # Regex: Everything except aplhanumeric characters
+
+        # Get headings
+        h1_list = parser.find_all("h1") * 5
+        h2_list = parser.find_all("h2") * 4
+        h3_list = parser.find_all("h3") * 3
+        h4_list = parser.find_all("h4") * 2
+
+        h1 = " ".join(map(lambda x: x.text, h1_list)).split()
+        h2 = " ".join(map(lambda x: x.text, h2_list)).split()
+        h3 = " ".join(map(lambda x: x.text, h3_list)).split()
+        h4 = " ".join(map(lambda x: x.text, h4_list)).split()
+        
 
         title = re.sub(non_alpha_num_exp,' ', title)
         body = re.sub(non_alpha_num_exp,' ', body) # Replace non alphanumeric characters with space
         # TODO - Take care of words that become like randomword34 after replacement
 
         # Get list of words from both
-        title_words = title.strip().split() * 3 # Title words are more important than body words
+        title_words = title.strip().split() * 10 # Title words are more important than body words
         body_words = body.strip().split()
-        all_words = title_words + body_words
+        all_words = title_words + body_words + h1 + h2 + h3 + h4
 
         # Insert in the inverted index
-        self.index_words(all_words, doc_name)
+        self.index_words(all_words, doc_name, title, h1, h2, h3, h4)
         self.update_doc_list(doc_name)
 
 if __name__ == "__main__":
@@ -138,4 +153,4 @@ if __name__ == "__main__":
     file.close()
 
     indexer = Indexer()
-    indexer.index_html_page("www.example1.com", data)
+    indexer.index_html_page("www.example2.com", data)
