@@ -8,6 +8,7 @@ import urllib.request
 import urllib.error
 import urllib.parse
 import urllib.robotparser
+import tldextract
 
 from indexer import Indexer
 
@@ -25,7 +26,7 @@ class Spider:
         Constructor 
         """
         
-        self.seeds = ["https://www.uwindsor.ca"] # Crawling starts from here
+        self.seeds = "http://www.uwindsor.ca/" # Crawling starts from here
         self.urls = []
         self._load_indexer()
 
@@ -80,28 +81,36 @@ class Spider:
         """
         
         # TODO - Write the indexing logic 
-        self.urls.append(url)
+        # self.urls.append(url)
         self.indexer.index_html_page(url, html_text)
+
+    def get_root_domain(self, url):
+        extract = tldextract.extract(url)
+        domain = extract.domain
+        return domain
 
     def run(self):
         """
         The entry point
         """
 
-        max_depth = 3000 #fetch only max_dept number of webpages
+        self.domain  = self.get_root_domain(self.seeds)
+
+        max_depth = 30000 #fetch only max_dept number of webpages
         depth = 0 #initial depth
         visited = {} #keep track of visited links to avoid cycle
         
         # BFS from each seed
-        q = [_ for _ in self.seeds]
+        # q = [_ for _ in self.seeds]
+        q = [self.seeds]
 
         while len(q) and depth < max_depth:
-            
-            print ("Page ", depth)
-            
-            url = q.pop(0)
-            visited[url] = True
 
+            print ("Page ", depth)
+            # print ("Visited ", visited)
+
+            url = q.pop(0)
+    
             # get html response and index the page
             http_response = self.get_http_response(url)
 
@@ -116,24 +125,33 @@ class Spider:
             except Exception:
                 continue
 
-            if url != response_url and visited.get(response_url):
-                continue
-
             visited[response_url] = True  # mark visited links to avoid cycles in BFS
             
             try:
                 self.index_page(url, html_text) # Index the retrieved webpage
             except Exception:
                 print ("Error while indexing ", response_url)
+                continue    
             
             links = self.get_links(url, html_text) # Get links from the current page
 
             # Push the new found links to ToCrawl list [BFS]
+            external_links_threshold = 2
             for link in links:
                 if not visited.get(link):
+
+                    if self.get_root_domain(url) != self.domain:
+                        external_links_threshold -= 1
+                        if external_links_threshold == 0:
+                            break
+                    
+                    visited[link] = True
+                    # f = open('/closet/links', 'a+')
+                    # f.write(link + "\n")
+                    # f.close()
                     q.append(link)
         
             depth += 1
-
+        
 s = Spider()
 s.run()
