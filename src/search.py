@@ -97,6 +97,7 @@ class Search:
         # Vectorize the docs
         current_token_number = 0
         doc_vectors = {}
+        total_num_docs_found = 0
         for token in query_tokens:
             
             # Fetch doc numbers to use for IDF calculation
@@ -106,12 +107,15 @@ class Search:
             # If the search token is irrelevant, skip it
             if docs_with_token.count() == 0:
                 continue
-            
+
             # Calculate IDF
             docs_with_token = docs_with_token[0]
             num_docs_with_token = len(docs_with_token["doc_list"])
             idf = num_docs / num_docs_with_token
-            
+
+            # Keep track of how many total pages are found with given query
+            total_num_docs_found += num_docs_with_token
+
             # Get query tf-idf vector Vectorize query
             query_vector[self.word_index[token]] = query_tf[token] * math.log(idf)
 
@@ -131,13 +135,18 @@ class Search:
         
         doc_ranks = []
 
+        # If no results were found for the given search query
+        print ("Number of pages ", total_num_docs_found)
+        if total_num_docs_found == 0:
+            print ("No result found")
+            return
+
         # Calculate cosine angles and create doc list with ranks
         for i in doc_vectors:
             doc_vector = doc_vectors[i]["d"]["d"]
             doc_ranks.append((self._angle_between_vectors(query_vector, doc_vector), i))
 
-        # s = sorted(doc_ranks, key=lambda x: x[0])[:30]
-        s = utils.quick_select(doc_ranks, 20, lambda x,y: x[0] <= y[0])
+        s = utils.quick_select(doc_ranks, 15, lambda x,y: x[0] < y[0])
 
         for i in s:
             print (i)

@@ -43,15 +43,16 @@ def quick_select(arr, k, sort_func=None):
                 tmp = arr[i]
                 arr[i] = arr[j]
                 arr[j] = tmp        
+              
                 i += 1
 
         tmp = arr[i]
         arr[i] = arr[pivot]
         arr[pivot] = tmp
 
-        if i < k:
+        if i < k and i<n-1: # If the pointer reached the end that means there are less pages than K
             l = i+1
-        elif i > k:
+        elif i > k and i>0: # Same as i<n-1 condition
             r = i-1
         else:
-            return (sorted(arr[:i+1]))
+            return (sorted(arr[:i]))
