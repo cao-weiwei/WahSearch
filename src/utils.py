@@ -26,3 +26,32 @@ def get_processed_words_list(words):
             processed_list.append(word)
 
     return processed_list
+
+def quick_select(arr, k, sort_func=None):
+    
+    n = len(arr)
+
+    l = 0
+    r = n - 1
+
+    while True:
+        pivot = r
+
+        i = l
+        for j in range(l, r):
+            if sort_func(arr[j],arr[pivot]):
+                tmp = arr[i]
+                arr[i] = arr[j]
+                arr[j] = tmp        
+                i += 1
+
+        tmp = arr[i]
+        arr[i] = arr[pivot]
+        arr[pivot] = tmp
+
+        if i < k:
+            l = i+1
+        elif i > k:
+            r = i-1
+        else:
+            return (sorted(arr[:i+1]))

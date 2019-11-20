@@ -20,6 +20,35 @@ class Search:
         self.index = mydb["index"]
         self.docs = mydb["docs"]
 
+        self.doc_vectors = {}
+        self.words = []
+        self.set_doc_vectors()
+
+    def set_doc_vectors(self):
+        # Load the whole index
+        index = self.index.find({})
+        n_words = index.count()
+
+        current_word_num = 0
+        self.word_index = {}
+        for i in index: # For each word in index
+            word = i["word"]
+            doc_list = i["doc_list"]
+
+            for doc in doc_list:
+                doc_id = doc["doc_id"]
+                if self.doc_vectors.get(doc_id):
+                    self.doc_vectors[doc_id]["d"][current_word_num] = doc["frequency_normalized"]
+                else:
+                    v = np.zeros(n_words)
+                    v[current_word_num] = doc["frequency_normalized"]
+                    self.doc_vectors[doc_id] = {"d": v}
+
+            self.word_index[word] = current_word_num
+            current_word_num += 1
+
+        self.num_word_in_corpus = len(self.word_index.keys())
+
     def _get_words_from_query(self, query_raw):
         """
         Process the given search query
@@ -53,10 +82,6 @@ class Search:
         docs_data = self.docs.find({})
         num_docs = docs_data[0]["cnt"]
 
-        doc_vectors = {}
-        num_tokens = len(query_tokens)
-        current_token_number = 0
-        
         # Vectorize query
         query_tf = {}
         for token in query_tokens:
@@ -67,56 +92,60 @@ class Search:
         for token in query_tokens:
             query_tf[token] = query_tf[token]/query_normalizer
         
-        query_vector = np.zeros(num_tokens)
+        query_vector = np.zeros(self.num_word_in_corpus)
 
         # Vectorize the docs
+        current_token_number = 0
+        doc_vectors = {}
         for token in query_tokens:
             
-            # Calculate idf
+            # Fetch doc numbers to use for IDF calculation
             docs_with_token_query = {"word": token}
             docs_with_token = self.index.find(docs_with_token_query)
 
+            # If the search token is irrelevant, skip it
             if docs_with_token.count() == 0:
                 continue
             
+            # Calculate IDF
             docs_with_token = docs_with_token[0]
             num_docs_with_token = len(docs_with_token["doc_list"])
-            
             idf = num_docs / num_docs_with_token
             
             # Get query tf-idf vector Vectorize query
-            query_vector[current_token_number] = query_tf[token] * math.log(idf)
+            query_vector[self.word_index[token]] = query_tf[token] * math.log(idf)
 
+            # Update the doc vector by multiplying the TF with IDF
             for doc in docs_with_token["doc_list"]:
                 tf = doc["frequency_normalized"]
                 tf_idf = tf * math.log(idf) # The final tf-idf score
                 doc_id = doc["doc_id"]
 
                 # Get doc tf-idf vector
-                v = doc_vectors.get(doc_id, np.zeros(num_tokens))
-                v[current_token_number] = tf_idf
-                doc_vectors[doc_id] = v
+                if doc_vectors.get(doc_id) == None:
+                    doc_vectors[doc_id] = {"d": self.doc_vectors[doc_id]}
+
+                doc_vectors[doc_id]["d"][self.word_index[token]] = tf_idf
 
             current_token_number += 1
         
         doc_ranks = []
 
+        # Calculate cosine angles and create doc list with ranks
         for i in doc_vectors:
-            doc_vector = doc_vectors[i]
+            doc_vector = doc_vectors[i]["d"]["d"]
             doc_ranks.append((self._angle_between_vectors(query_vector, doc_vector), i))
 
-        s = sorted(doc_ranks, key=lambda x: x[0])[:30]
+        # s = sorted(doc_ranks, key=lambda x: x[0])[:30]
+        s = utils.quick_select(doc_ranks, 20, lambda x,y: x[0] <= y[0])
 
         for i in s:
             print (i)
-            print (query_vector)
-            print (doc_vectors[i[1]])
 
 if __name__ == "__main__":
     s = Search()
     
-    q = "admission requirement in master of applied computing"
+    q = "master of applied computing"
     q_processed = s._get_words_from_query(q)
-    # print (q_processed)
 
     s.search(q)
