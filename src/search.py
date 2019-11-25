@@ -67,7 +67,7 @@ class Search:
         angle = np.arccos(c) # if you really want the angle
         return angle
 
-    def search(self, query, top_k):
+    def search(self, query, top_k, page_number=1):
         """
         Search the database for given query and return relevent pages
 
@@ -146,10 +146,12 @@ class Search:
             doc_vector = doc_vectors[i]["d"]["d"]
             doc_ranks.append((self._angle_between_vectors(query_vector, doc_vector), i))
 
-        s = utils.quick_select(doc_ranks, top_k, lambda x,y: x[0] < y[0])
+        # Get top k*num_pages using quick select
+        s = utils.quick_select(doc_ranks, top_k*page_number, lambda x,y: x[0] < y[0])
         ans = [x[1] for x in s]
+        start_index = (page_number-1) * top_k
 
-        return ans
+        return ans[start_index:]
 
 if __name__ == "__main__":
     s = Search()
@@ -157,5 +159,5 @@ if __name__ == "__main__":
     q = "master of applied computing"
     q_processed = s._get_words_from_query(q)
 
-    for i in (s.search(q,20)):
+    for i in (s.search(q,20, page_number=2)):
         print (i)
