@@ -8,7 +8,7 @@ try:
 
     stemmer = nltk.SnowballStemmer("english")
 except Exception:
-    print("Error while loading processing engine. WIll index useless stuff along with useful ones.")
+    print("Error while l44eprocessing engine. WIll index useless stuff along with useful ones.")
 
 
 def get_processed_words_list(words):

@@ -101,7 +101,6 @@ class Search:
         doc_vectors = {}
         total_num_docs_found = 0
         for token in query_tokens:
-
             # Fetch doc numbers to use for IDF calculation
             docs_with_token_query = {"word": token}
             docs_with_token = self.index.find(docs_with_token_query)

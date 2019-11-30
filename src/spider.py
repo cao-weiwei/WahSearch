@@ -10,7 +10,11 @@ import urllib.parse
 import urllib.robotparser
 import tldextract
 
+<<<<<<< HEAD
 from .indexer import Indexer
+=======
+from indexer import Indexer
+>>>>>>> dev
 
 from bs4 import BeautifulSoup
 
