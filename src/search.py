@@ -1,9 +1,10 @@
 import re
 import nltk
-import utils
 import math
 import numpy as np
 import pymongo
+
+import utils
 
 from numpy.linalg import norm
 
@@ -13,6 +14,8 @@ class Search:
         """
         Constructor
         """
+
+        self.utils = utils.Utils()
         self.stemmer = nltk.SnowballStemmer("english")
 
         myclient = pymongo.MongoClient("mongodb://localhost:27017/")
@@ -58,7 +61,7 @@ class Search:
         """
 
         query_alphanum = re.sub(r'[^a-zA-Z\s]', '', query_raw.strip())
-        query_processed = utils.get_processed_words_list(query_alphanum.split())
+        query_processed = self.utils.get_processed_words_list(query_alphanum.split())
 
         return query_processed
 
@@ -147,7 +150,7 @@ class Search:
             doc_ranks.append((self._angle_between_vectors(query_vector, doc_vector), i))
 
         # Get top k*num_pages using quick select
-        s = utils.quick_select(doc_ranks, top_k*page_number, lambda x,y: x[0] < y[0])
+        s = self.utils.quick_select(doc_ranks, top_k*page_number, lambda x,y: x[0] < y[0])
         ans = [x[1] for x in s]
         start_index = (page_number-1) * top_k
 

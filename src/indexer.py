@@ -6,9 +6,10 @@ Author: Harsh Sodiwala
 
 import re
 import nltk
-import utils
 import math
 import functools
+
+import utils
 
 from bs4 import BeautifulSoup
 
@@ -20,6 +21,7 @@ class Indexer:
         """
 
         self.load_mongo_client()
+        self.utils = utils.Utils()
 
     def load_mongo_client(self):
         """
@@ -38,7 +40,7 @@ class Indexer:
         word_dict = {}
 
         # Populate word dictionary
-        all_words = utils.get_processed_words_list(words)
+        all_words = self.utils.get_processed_words_list(words)
         for word in all_words:
             word_dict[word] = word_dict.get(word,0) + 1
         
