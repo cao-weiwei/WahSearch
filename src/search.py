@@ -141,7 +141,7 @@ class Search:
         print("Number of pages ", total_num_docs_found)
         if total_num_docs_found == 0:
             print("No result found")
-            return
+            return []
 
         # Calculate cosine angles and create doc list with ranks
         for i in doc_vectors:
@@ -159,17 +159,12 @@ class Search:
 if __name__ == "__main__":
     s = Search()
 
-    q = "master of applied computing"
+    q = "maser of applied computing"
     q_processed = s._get_words_from_query(q)
 
     count = 1
     page_index = 1
-    # if s.search(q, 20, page_number=page_index):
-    #     print("Page NO.{}".format(page_index))
-    #     for i in s.search(q, 20, page_number=page_index):
-    #         print(count, i)
-    #         count += 1
-    #     page_index += 1
-    # else:
-    #     print("total pages: {}".format(page_index-1))
-    #     break
+    
+    res = s.search(q, 10, 1)
+    for i in res:
+        print (i)
