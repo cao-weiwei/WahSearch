@@ -3,9 +3,9 @@ import re
 from flask import Flask, request, render_template
 import json
 
-from src.SpellSuggestion import SpellSuggestion
-from src.modules.Pagination import Pagination
-from src.search import Search
+from SpellSuggestion import SpellSuggestion
+from modules.Pagination import Pagination
+from search import Search
 
 
 app = Flask(__name__, template_folder='templates')
@@ -49,21 +49,16 @@ def suggested_keywords():
 def search_keywords():
     if request.method == 'GET':
         keywords = request.args.get("keywords")
-        page_number_query = request.args.get("page")
-        links_per_page = request.args.get("keywords")
+        page_number_query = int(request.args.get("page_number"))
+        links_per_page = int(request.args.get("per_page"))
 
         s = Search()
         search_results = []
         page_indexer = 1
-        while True:
-            if s.search(keywords, 15, page_number=page_number_query):
-                print("Page NO.{}".format(page_indexer))
-                for each_page_docs in s.search(keywords, 20, page_number=page_indexer):
-                    print(each_page_docs)
-                    search_results.append(each_page_docs)
-                    page_indexer += 1
-
-        return json.dumps(search_results)
+        
+        ans = s.search(keywords, links_per_page, page_number=page_number_query)
+    
+        return json.dumps(ans)
 
 # @app.route('/test')
 # def test():

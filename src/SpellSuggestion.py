@@ -5,10 +5,10 @@ suggestion
 import re
 import string
 from collections import Counter
-from src.Trie import Trie
+from Trie import Trie
 from english_words import english_words_set
 
-hard_disk = "./Hard_disk.txt"
+# hard_disk = "./Hard_disk.txt"
 
 
 class SpellSuggestion(object):

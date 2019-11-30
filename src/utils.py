@@ -1,7 +1,7 @@
 import nltk
 
 try:
-    stop_words_file = open("../stop_words.dat")
+    stop_words_file = open("./stop_words.dat")
     stop_word_data = stop_words_file.read()
     stop_words_list = stop_word_data.split('\n')
     stop_words = dict.fromkeys(stop_words_list, True)

@@ -6,7 +6,7 @@ import pymongo
 
 from numpy.linalg import norm
 
-from src import utils
+import utils
 
 
 class Search:
@@ -164,13 +164,12 @@ if __name__ == "__main__":
 
     count = 1
     page_index = 1
-    while True:
-        if s.search(q, 20, page_number=page_index):
-            print("Page NO.{}".format(page_index))
-            for i in s.search(q, 20, page_number=page_index):
-                print(count, i)
-                count += 1
-            page_index += 1
-        else:
-            print("total pages: {}".format(page_index-1))
-            break
+    # if s.search(q, 20, page_number=page_index):
+    #     print("Page NO.{}".format(page_index))
+    #     for i in s.search(q, 20, page_number=page_index):
+    #         print(count, i)
+    #         count += 1
+    #     page_index += 1
+    # else:
+    #     print("total pages: {}".format(page_index-1))
+    #     break
