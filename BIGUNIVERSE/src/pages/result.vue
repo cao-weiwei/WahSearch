@@ -127,7 +127,7 @@ export default {
     handleSearch() {
       // console.log("searchText", this.searchText)
       if (!this.searchText.trim().length) {
-        this.$message.warning("没东西怎么搜鸭！")
+        this.$message.warning("there is no words")
         return
       }
       this.$router.push(`/result/${this.searchText.trim()}`)

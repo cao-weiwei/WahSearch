@@ -63,7 +63,8 @@ export default {
       };
     },
     loadAll() {
-      return associateWord;
+      // return associateWord;
+        return "";
 
     },
     handleSelect(item) {
@@ -73,7 +74,7 @@ export default {
       //
       console.log("searchText", this.searchText.length, this.searchText.trim().length)
       if (!this.searchText.trim().length) {
-        this.$message.warning("没东西怎么搜鸭！")
+        this.$message.warning("there is no words")
         return
       }
       this.$router.push(`/result/${this.searchText}`)
