@@ -8,10 +8,10 @@ try:
 
     stemmer = nltk.SnowballStemmer("english")
 except Exception:
-    print ("Error while loading processing engine. WIll index useless stuff along with useful ones.")
+    print("Error while l44eprocessing engine. WIll index useless stuff along with useful ones.")
+
 
 def get_processed_words_list(words):
-
     """
     Process words list and return a searchable words list
     remove stop words
@@ -27,8 +27,8 @@ def get_processed_words_list(words):
 
     return processed_list
 
+
 def quick_select(arr, k, sort_func=None):
-    
     n = len(arr)
 
     l = 0
@@ -39,20 +39,20 @@ def quick_select(arr, k, sort_func=None):
 
         i = l
         for j in range(l, r):
-            if sort_func(arr[j],arr[pivot]):
+            if sort_func(arr[j], arr[pivot]):
                 tmp = arr[i]
                 arr[i] = arr[j]
-                arr[j] = tmp        
-              
+                arr[j] = tmp
+
                 i += 1
 
         tmp = arr[i]
         arr[i] = arr[pivot]
         arr[pivot] = tmp
 
-        if i < k and i<n-1: # If the pointer reached the end that means there are less pages than K
-            l = i+1
-        elif i > k and i>0: # Same as i<n-1 condition
-            r = i-1
+        if i < k and i < n - 1:  # If the pointer reached the end that means there are less pages than K
+            l = i + 1
+        elif i > k and i > 0:  # Same as i<n-1 condition
+            r = i - 1
         else:
             return (sorted(arr[:i]))
