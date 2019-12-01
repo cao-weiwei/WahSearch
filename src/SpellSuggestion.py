@@ -6,9 +6,8 @@ import re
 import string
 from collections import Counter
 from Trie import Trie
-from english_words import english_words_set
 
-# hard_disk = "./Hard_disk.txt"
+english_words = "./words_alpha.txt"
 
 
 class SpellSuggestion(object):
@@ -16,9 +15,12 @@ class SpellSuggestion(object):
         """ initialize the WORDS dictionary which the key is a word and the value is the occurrences of the key  """
         self.trie = Trie()
         self.regex = regex
-        # with open(hard_disk, "r") as f:  # Create a dictionary for storing all the words and its occurrences
-        #     self.WORDS = Counter(self.words_token(f.read()))
-        self.WORDS = Counter(english_words_set)
+
+        with open(english_words, "r") as f:  # Create a dictionary for storing all the words and its occurrences
+            self.WORDS = Counter(self.words_token(f.read()))
+
+        for word in self.WORDS.keys():  # put all the words in Trie
+            self.trie.insert(word)
 
     def words_token(self, text):
         """ extract all the words from text with lowercase """
@@ -40,7 +42,7 @@ class SpellSuggestion(object):
         transposes = [L + R[1] + R[0] + R[2:] for L, R in splits if len(R) > 1]
         replaces = [L + c + R[1:] for L, R in splits if R for c in letters]
         inserts = [L + c + R for L, R in splits for c in letters]
-        return set(deletes + transposes + replaces + inserts)
+        return set(replaces + deletes + transposes + inserts)
 
     def edit_distance_2(self, word):
         """ get all combinations from the given word which edit distance is 2 """
@@ -52,8 +54,6 @@ class SpellSuggestion(object):
 
     def candidates(self, word):
         """ get all the candidate words from the given word """
-        if word in self.WORDS:
-            return [word]
         return self.shown([word]) or self.shown(self.edit_distance_1(word)) or self.shown(self.edit_distance_2(word)) or [word]
 
     def correct_word(self, word) -> str:
@@ -72,13 +72,11 @@ class SpellSuggestion(object):
 
     def auto_completer(self, prefix, top=5):
         """ return number of top auto complete suggestion according the prefix """
-        for word in self.WORDS.keys():  # put all the words in Trie
-            self.trie.insert(word)
         return self.trie.autocomplete(prefix, top)  # get the top word accourding to the given prefix
 
 
 if __name__ == '__main__':
-    raw_strings = ["computer scien", "master of comp"]
+    raw_strings = ["master of comp"]
 
     print("*" * 30)
     test = SpellSuggestion()
