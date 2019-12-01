@@ -10,6 +10,7 @@ import math
 import functools
 
 import utils
+import json
 
 from bs4 import BeautifulSoup
 
@@ -38,6 +39,26 @@ class Indexer:
 
         # Generate table with word frequence
         word_dict = {}
+
+        try:
+            existing_words = []
+            f = open("words_corpus.txt", "r")
+            words_text = f.read().strip()
+            if words_text == "":
+                existing_words = []
+            else:
+                existing_words = json.loads(words_text)
+            f.close()
+        except Exception as e:
+            print ("Exception ", str(e))
+
+        # Pickle up the words for future use
+        new_words_list = words + existing_words
+        new_words_list = list(set(new_words_list))
+
+        f = open("words_corpus.txt", "w+")
+        f.write(json.dumps(new_words_list))
+        f.close()
 
         # Populate word dictionary
         all_words = self.utils.get_processed_words_list(words)

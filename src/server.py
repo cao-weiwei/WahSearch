@@ -37,19 +37,23 @@ def suggested_keywords():
         raw_string = request.args.get("keywords")
         # checking spell and give suggestions
         raw_words = re.findall(regex_word, raw_string)  # remove non-letter chars
+        query = re.sub('[^0-9a-zA-Z]', ' ', raw_string)
 
-        # first step is doing spell check
-        words_after_spell_check = spell_suggestions.spell_checker(" ".join(raw_words))
-        # then for the last word doing auto complete
-        last_word_auto_complete = spell_suggestions.auto_completer(words_after_spell_check.split(" ")[-1])
-        print("words_after_spell_check={}, last_word_auto_complete={}".format(words_after_spell_check, last_word_auto_complete))
-        # combine the results
-        words_spell_suggestions = []
-        for item in last_word_auto_complete:
-            tmp = words_after_spell_check.split(" ")
-            tmp[-1] = item
-            words_spell_suggestions.append(" ".join(tmp))
-        return json.dumps(words_spell_suggestions) if words_spell_suggestions else "No results!"
+        print (query)
+        print (query.split())
+
+        query = query.split(" ")
+
+        to_spell_check = query[: -1]
+        to_autocomp = query[-1]
+        
+        corrections = [spell_suggestions.correct_word(x) for x in to_spell_check]
+        autocompletes = spell_suggestions.auto_completer(to_autocomp)
+
+        ans = [corrections + [x] for x in autocompletes]
+        ans = [" ".join(x) for x in ans]
+
+        return json.dumps(ans)
         
     return 'Nothing Happened!'
 

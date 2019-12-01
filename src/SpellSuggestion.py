@@ -6,9 +6,10 @@ import re
 import string
 from collections import Counter
 from Trie import Trie
+import json
 
-english_words = "./words_alpha.txt"
-
+english_words_file = "./words_alpha.txt"
+corpus_words_file = './words_corpus.txt'
 
 class SpellSuggestion(object):
     def __init__(self, regex=r"[\w]+"):
@@ -16,10 +17,18 @@ class SpellSuggestion(object):
         self.trie = Trie()
         self.regex = regex
 
-        with open(english_words, "r") as f:  # Create a dictionary for storing all the words and its occurrences
-            self.WORDS = Counter(self.words_token(f.read()))
+        with open(english_words_file, "r") as f:  # Create a dictionary for storing all the words and its occurrences
+            english_words = json.loads(f.read())
+            f.close()
+        
+        with open(corpus_words_file, "r") as f:  # Create a dictionary for storing all the words and its occurrences
+            corpus_words = json.loads(f.read())
+            f.close()
 
-        for word in self.WORDS.keys():  # put all the words in Trie
+        all_words = english_words + corpus_words*2
+        self.WORDS = Counter(all_words)
+
+        for word in all_words:  # put all the words in Trie
             self.trie.insert(word)
 
     def words_token(self, text):
@@ -72,6 +81,7 @@ class SpellSuggestion(object):
 
     def auto_completer(self, prefix, top=5):
         """ return number of top auto complete suggestion according the prefix """
+        # print (self.trie.all_suffixes(prefix))
         return self.trie.autocomplete(prefix, top)  # get the top word accourding to the given prefix
 
 
