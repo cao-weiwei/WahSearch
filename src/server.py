@@ -1,14 +1,14 @@
 import re
 
 from flask import Flask, request, render_template
-import json
+import json 
 
 from SpellSuggestion import SpellSuggestion
 from search import Search
 
 
 app = Flask(__name__, template_folder='templates')
-
+spell_suggestions = SpellSuggestion()
 
 @app.route('/')
 def hello_world():
@@ -20,56 +20,24 @@ def suggested_keywords():
     if request.method == 'GET':
         regex_word = r"[\w]+"
         # get the original string
-        spell_suggestions = SpellSuggestion()
         raw_string = request.args.get("keywords")
-
         # checking spell and give suggestions
         raw_words = re.findall(regex_word, raw_string)  # remove non-letter chars
-        raw_words = raw_string.split()
-        words_before_spell_check = " ".join(raw_words[:-1])  # spilt the raw_string with the last space
-        words_before_auto_complete = raw_words[-1]
-        words_after_spell_check = None
-        print("raw:{}, spell: {}, auto: {}".format(raw_words, words_before_spell_check, words_before_auto_complete))
 
-        if words_before_spell_check:  # if more than one word typed, doing spell check and auto complete
-            words_after_spell_check = spell_suggestions.spell_checker(words_before_spell_check)
-        words_before_auto_complete = list(spell_suggestions.auto_completer(words_before_auto_complete))
-
-        result = []
-        if words_after_spell_check:
-            for item in words_before_auto_complete:
-                result.append(words_after_spell_check + " " + item)
-        else:
-            result = words_before_auto_complete
+        # first step is doing spell check
+        words_after_spell_check = spell_suggestions.spell_checker(" ".join(raw_words))
+        # then for the last word doing auto complete
+        last_word_auto_complete = spell_suggestions.auto_completer(words_after_spell_check.split(" ")[-1])
+        print("words_after_spell_check={}, last_word_auto_complete={}".format(words_after_spell_check, last_word_auto_complete))
+        # combine the results
+        words_spell_suggestions = []
+        for item in last_word_auto_complete:
+            tmp = words_after_spell_check.split(" ")
+            tmp[-1] = item
+            words_spell_suggestions.append(" ".join(tmp))
+        return json.dumps(words_spell_suggestions) if words_spell_suggestions else "No results!"
         
-        return json.dumps(result)
     return 'Nothing Happened!'
-
-
-@app.route('/search', methods=['GET', 'POST'])
-def search_keywords():
-    if request.method == 'GET':
-        keywords = request.args.get("keywords")
-        page_number_query = int(request.args.get("page_number"))
-        links_per_page = int(request.args.get("per_page"))
-
-        s = Search()
-        search_results = []
-        page_indexer = 1
-        
-        ans = s.search(keywords, links_per_page, page_number=page_number_query)
-    
-        return json.dumps(ans)
-
-# @app.route('/test')
-# def test():
-#     pager_obj = Pagination(request.args.get("page", 1), page_indexer, request.path, request.args, per_page_count=20)
-#     print(request.path)
-#     print(request.args)
-#     index_list = li[pager_obj.start:pager_obj.end]
-#     page_html_links = pager_obj.page_html()
-#     print(page_html_links)
-#     return render_template("test.html", index_list=index_list, html=page_html_links)
 
 
 if __name__ == '__main__':
