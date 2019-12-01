@@ -6,13 +6,6 @@
         <el-button @click="handleSearchFromInput()" slot="append" icon="el-icon-search"></el-button>
       </el-autocomplete>
     </el-row>
-<!--    <el-menu :default-active="selectedMenu" mode="horizontal" @select="handleSelect">-->
-<!--      <el-menu-item index="all">全部</el-menu-item>-->
-<!--      <el-menu-item index="commonInfo">公共信息</el-menu-item>-->
-<!--      <el-menu-item index="system">系统信息</el-menu-item>-->
-<!--      <el-menu-item index="process">流程规范</el-menu-item>-->
-<!--      <el-menu-item index="knowledge">知识分享</el-menu-item>-->
-<!--    </el-menu>-->
 
     <div class="result-flex">
       <div class="result-box">
@@ -33,10 +26,6 @@
         <br>
 
       </div>
-      <div class="result-recommend">
-        <resultRecList :resultRecList="recommendList"></resultRecList>
-        <resultRecList :resultRecList="recommendList2"></resultRecList>
-      </div>
     </div>
 
   </div>
@@ -48,12 +37,10 @@ import axios from "axios";
 import { Loading } from 'element-ui';
 
 import resultBoxList from '@/components/resultList'
-import resultRecList from '@/components/resultRecList'
 
 export default {
   components: {
     resultBoxList,
-    resultRecList,
   },
   data() {
     return {
