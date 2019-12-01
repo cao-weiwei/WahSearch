@@ -12,7 +12,7 @@ module.exports = {
     assetsPublicPath: '/',
     proxyTable: {
       '/': { // 接口根地址
-        target: 'http://10.22.51.32:5002/', // 目标后台服务地址
+        target: 'http://127.0.0.1:5000/', // 目标后台服务地址
         changeOrigin: true, // 开启代理 也可解决跨域问题
         pathRewrite: {
           '^/': '/' // 复写远端地址 尽量保持一致

@@ -1,22 +1,22 @@
 <template>
   <div class="result-page">
     <el-row :gutter="0" class="page-header">
-      <span class="title-text" @click="()=>{this.$router.push(`/home`)}">BIG UNIVERSE</span>
+      <span class="title-text" @click="()=>{this.$router.push(`/home`)}">WAH SEARCH</span>
       <el-autocomplete @keyup.enter.native="handleSearchFromInput()" class="inline-input" v-model="searchText" :fetch-suggestions="querySearch" placeholder="" :trigger-on-focus="false">
         <el-button @click="handleSearchFromInput()" slot="append" icon="el-icon-search"></el-button>
       </el-autocomplete>
     </el-row>
-    <el-menu :default-active="selectedMenu" mode="horizontal" @select="handleSelect">
-      <el-menu-item index="all">全部</el-menu-item>
-      <el-menu-item index="commonInfo">公共信息</el-menu-item>
-      <el-menu-item index="system">系统信息</el-menu-item>
-      <el-menu-item index="process">流程规范</el-menu-item>
-      <el-menu-item index="knowledge">知识分享</el-menu-item>
-    </el-menu>
+<!--    <el-menu :default-active="selectedMenu" mode="horizontal" @select="handleSelect">-->
+<!--      <el-menu-item index="all">全部</el-menu-item>-->
+<!--      <el-menu-item index="commonInfo">公共信息</el-menu-item>-->
+<!--      <el-menu-item index="system">系统信息</el-menu-item>-->
+<!--      <el-menu-item index="process">流程规范</el-menu-item>-->
+<!--      <el-menu-item index="knowledge">知识分享</el-menu-item>-->
+<!--    </el-menu>-->
 
     <div class="result-flex">
       <div class="result-box">
-        <div class="result-num">Big Universe为您找到相关结果约 <span v-text="this.totalSize"></span> 个</div>
+        <div class="result-num">About <span v-text="this.totalSize"></span> links here</div>
 
         <br>
 
@@ -45,8 +45,6 @@
 <script>
 import axios from "axios";
 
-import { associateWord } from "./associateWord.js"
-
 import { Loading } from 'element-ui';
 
 import resultBoxList from '@/components/resultList'
@@ -66,7 +64,7 @@ export default {
       totalSize: 0,
       totalAll: 0,
       pageNum: 1,
-      pageSize: 500,
+      pageSize: 20,
       displayList: {
         all: [],
         commonInfo: [],
@@ -91,29 +89,41 @@ export default {
   },
   methods: {
     handleSizeChange(val) {
-      console.log(`每页 ${val} 条`);
+      console.log(` ${val} links`);
       this.pageSize = val
       this.handleSearch()
     },
     handleCurrentChange(val) {
-      console.log(`当前页: ${val}`);
+      console.log(` ${val}`);
       this.pageNum = val
       this.handleSearch()
     },
 
-    querySearch(queryString, cb) {
-      var queryList = this.queryList;
-      var results = queryString ? queryList.filter(this.createFilter(queryString)) : queryList;
-      // 调用 callback 返回建议列表的数据
-      cb(results);
-    },
+      querySearch(queryString, cb) {
+          axios.get(`/suggestion`, {
+              params: {
+                  keywords: this.searchText.trim(),
+              }
+          }).then(res => {
+              if (!res.data) {
+                  this.$alert("ERROR")
+              } else {
+                  console.log("get suggestion = " + res.data)
+                  var dic = [{}];
+                  for (let i of res.data) {
+                      dic.push({value: i})
+                  }
+                  cb(dic)
+              }
+          })
+      },
     createFilter(queryString) {
       return (restaurant) => {
         return (restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) > -1);
       };
     },
     loadAll() {
-      return associateWord;
+      return "";
     },
     handleSelect(index, indexPath) {
       this.selectedMenu = index
@@ -132,101 +142,32 @@ export default {
       }
       this.$router.push(`/result/${this.searchText.trim()}`)
       let fullScreenLoading = Loading.service({ fullscreen: true });
-      axios.get(`/search/${this.searchText.trim()}`, {
+      axios.get(`/search`, {
         params: {
-          pageNum: this.pageNum,
-          pageSize: this.pageSize
+            keywords: this.searchText.trim(),
+            page_number: this.pageNum,
+            per_page: this.pageSize
         }
       }).then(res => {
-        if (!res.data.data) {
-          this.$alert(res.data.errMsg)
+        if (!res.data) {
+          this.$alert("ERROR")
           fullScreenLoading.close()
         } else {
           fullScreenLoading.close()
-          // 搜索结果高亮并赋值
           //  res.data.data
-          console.log(res.data.data)
+          console.log(res.data)
 
-          this.displayList.all = this.highlight(res.data.query.SegmentQuery, res.data.data)
+          this.displayList.all = res.data.links
           console.log(this.displayList.all)
-          this.totalSize = res.data.totalSize
-          this.totalAll = res.data.totalSize
+          this.totalSize = res.data.total_links
+          this.totalAll = res.data.links.length
 
           this.selectedMenu = 'all'
 
-          this.displayList.commonInfo = this.displayList.all.filter(item => {
-            // 公共信息
-            return item.label == 'BulletinNotice'
-              || item.label == 'Person'
-              || item.label == 'PublicInfo'
-              || item.label == 'Department'
-              || item.isReturn == true
-          });
-          this.displayList.system = this.displayList.all.filter(item => {
-            // 系统信息
-            return item.label == 'System'
-              || item.label == 'InternalWeb'
-          });
-          this.displayList.process = this.displayList.all.filter(item => {
-            // 流程规范
-            return item.label == ''
-          });
-          this.displayList.knowledge = this.displayList.all.filter(item => {
-            // 知识分享
-            return item.label == 'Confluence'
-          });
         }
-        // console.log(this.displayList)
       })
 
-      axios.get(`/recommend/${this.searchText}`)
-        .then(res => {
-          this.recommendList = res.data.data
-          this.recommendList2 = res.data.date2
-        })
     },
-    highlight(splitWords, result) {
-      console.log(splitWords, result)
-      let highlightResult = result.map(resultItem => {
-        // console.log("resultItem", resultItem)
-        let highlightResultItem = {}
-        for (const key in resultItem) {
-          if (resultItem.hasOwnProperty(key)) {
-            let element = resultItem[key];
-            // console.log(key, element)
-            if (key == "english_short_name" || key == "en_name") {
-              element = element.toUpperCase()
-            }
-            if (key == "pinyin_name" || key == "english_name") {
-              element = this.FirstUpperCase(element)
-            }
-
-            for (let i = 0; i < splitWords.length; i++) {
-              const splitWord = splitWords[i];
-              console.log(1)
-              if (key != 'url' && key != 'label' && key != 'intent' && key != 'email' && typeof (element) == 'string') {
-                // 正则匹配关键字
-                var reg = new RegExp("" + splitWord + "", "ig");
-                var element = element.replace(reg, (item) => {
-                  return `<font>${item}</font>`
-                });
-                // console.log(highlightElement)
-                highlightResultItem[key] = element
-              } else {
-                highlightResultItem[key] = element
-              }
-            }
-          }
-        }
-        return highlightResultItem
-      })
-      console.log("highlightResult", highlightResult)
-      return highlightResult
-
-    },
-    FirstUpperCase(str) {
-      return str.toLowerCase().replace(/( |^)[a-z]/g, (L) => L.toUpperCase());
-    }
 
   }
 }
