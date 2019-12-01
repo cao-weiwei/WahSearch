@@ -3,7 +3,6 @@
     <br>
     <br>
     <br>
-    <!-- <a href="sip:chunli_chu@saic-gm.com">开始 Skype 文字聊天</a> -->
     <br>
     <br>
     <br>
@@ -15,7 +14,7 @@
       <el-col :span="6">&nbsp;</el-col>
       <el-col :span="12">
         <el-autocomplete @keyup.enter.native="handleSearch()" class="inline-input" v-model="searchText"
-                         :fetch-suggestions="querySearch" placeholder="" :trigger-on-focus="false">
+                         :fetch-suggestions="querySearch" placeholder="search something..." :trigger-on-focus="false">
           <el-button @click="handleSearch()" slot="append" icon="el-icon-search"></el-button>
         </el-autocomplete>
       </el-col>
@@ -24,12 +23,6 @@
     <br>
     <br>
     <br>
-    <!-- <el-row :gutter="0" style="margin: 0 auto; width: 1200px">
-      <el-col style="text-align: left" :span="6" v-for="(item,index) in webList" :key="index">
-        <el-avatar> {{item.title}} </el-avatar>
-        <div style="color: white">{{item.title}}</div>
-      </el-col>
-    </el-row> -->
   </div>
 </template>
 
@@ -62,11 +55,17 @@
                         this.$alert("ERROR")
                     } else {
                         console.log("get suggestion = " + res.data)
+
                         var dic = [{}];
                         for (let i of res.data) {
                             dic.push({value: i})
                         }
-                        cb(dic)
+                        console.log("get dic = " + dic.length)
+                        if (dic.length == 1) {
+                            cb([{value: "there is no suggestion"}])
+                        } else {
+                            cb(dic)
+                        }
                     }
                 })
             },

@@ -100,18 +100,11 @@ export default {
                   for (let i of res.data) {
                       dic.push({value: i})
                   }
+
                   cb(dic)
               }
           })
       },
-    createFilter(queryString) {
-      return (restaurant) => {
-        return (restaurant.value.toLowerCase().indexOf(queryString.toLowerCase()) > -1);
-      };
-    },
-    loadAll() {
-      return "";
-    },
     handleSelect(index, indexPath) {
       this.selectedMenu = index
       this.totalSize = index == 'all' ? this.totalAll : this.displayList[index].length
