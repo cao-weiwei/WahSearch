@@ -3,8 +3,9 @@ import re
 from flask import Flask, request, render_template
 import json
 
-from SpellSuggestion import SpellSuggestion
-from search import Search
+from src.SpellSuggestion import SpellSuggestion
+from src.modules.Pagination import Pagination
+from src.search import Search
 
 
 app = Flask(__name__, template_folder='templates')
@@ -25,7 +26,6 @@ def suggested_keywords():
 
         # checking spell and give suggestions
         raw_words = re.findall(regex_word, raw_string)  # remove non-letter chars
-        raw_words = raw_string.split()
         words_before_spell_check = " ".join(raw_words[:-1])  # spilt the raw_string with the last space
         words_before_auto_complete = raw_words[-1]
         words_after_spell_check = None
@@ -33,7 +33,7 @@ def suggested_keywords():
 
         if words_before_spell_check:  # if more than one word typed, doing spell check and auto complete
             words_after_spell_check = spell_suggestions.spell_checker(words_before_spell_check)
-        words_before_auto_complete = list(spell_suggestions.auto_completer(words_before_auto_complete))
+        words_before_auto_complete = spell_suggestions.auto_completer(words_before_auto_complete)
 
         result = []
         if words_after_spell_check:
@@ -41,8 +41,7 @@ def suggested_keywords():
                 result.append(words_after_spell_check + " " + item)
         else:
             result = words_before_auto_complete
-        
-        return json.dumps(result)
+        return json.dumps(result) if result else "No results!"
     return 'Nothing Happened!'
 
 
@@ -50,16 +49,21 @@ def suggested_keywords():
 def search_keywords():
     if request.method == 'GET':
         keywords = request.args.get("keywords")
-        page_number_query = int(request.args.get("page_number"))
-        links_per_page = int(request.args.get("per_page"))
+        page_number_query = request.args.get("page")
+        links_per_page = request.args.get("keywords")
 
         s = Search()
         search_results = []
         page_indexer = 1
-        
-        ans = s.search(keywords, links_per_page, page_number=page_number_query)
-    
-        return json.dumps(ans)
+        while True:
+            if s.search(keywords, 15, page_number=page_number_query):
+                print("Page NO.{}".format(page_indexer))
+                for each_page_docs in s.search(keywords, 20, page_number=page_indexer):
+                    print(each_page_docs)
+                    search_results.append(each_page_docs)
+                    page_indexer += 1
+
+        return json.dumps(search_results)
 
 # @app.route('/test')
 # def test():
