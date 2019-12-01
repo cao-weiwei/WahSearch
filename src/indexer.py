@@ -64,6 +64,7 @@ class Indexer:
             upd["$push"] = dict()
             upd["$push"]["doc_list"] = {
                 "doc_id": doc_name,
+                "doc_title": title,
                 "frequency": cnt,
                 "frequency_normalized": cnt / normalizing_factor
             }
@@ -76,7 +77,7 @@ class Indexer:
             if not updated:
                 upd = dict()
                 upd["word"] = word
-                upd["doc_list"] = [{"doc_id": doc_name, "frequency": cnt, "frequency_normalized": cnt / normalizing_factor}]
+                upd["doc_list"] = [{"doc_id": doc_name, "doc_title": title, "frequency": cnt, "frequency_normalized": cnt / normalizing_factor}]
                 
                 self.index.insert(upd)
 
@@ -132,7 +133,7 @@ class Indexer:
         h3 = " ".join(map(lambda x: x.text, h3_list)).split()
         h4 = " ".join(map(lambda x: x.text, h4_list)).split()
         
-
+        original_title = title.capitalize()
         title = re.sub(non_alpha_num_exp,' ', title)
         body = re.sub(non_alpha_num_exp,' ', body) # Replace non alphanumeric characters with space
         # TODO - Take care of words that become like randomword34 after replacement
@@ -143,7 +144,7 @@ class Indexer:
         all_words = title_words + body_words + h1 + h2 + h3 + h4
 
         # Insert in the inverted index
-        self.index_words(all_words, doc_name, title, h1, h2, h3, h4)
+        self.index_words(all_words, doc_name, original_title, h1, h2, h3, h4)
         self.update_doc_list(doc_name)
 
 if __name__ == "__main__":

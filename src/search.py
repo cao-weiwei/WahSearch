@@ -40,15 +40,20 @@ class Search:
         for i in index:  # For each word in index
             word = i["word"]
             doc_list = i["doc_list"]
-
+        
             for doc in doc_list:
                 doc_id = doc["doc_id"]
+                doc_title = doc["doc_title"]
+
+            # try:
                 if self.doc_vectors.get(doc_id):
                     self.doc_vectors[doc_id]["d"][current_word_num] = doc["frequency_normalized"]
                 else:
                     v = np.zeros(n_words)
                     v[current_word_num] = doc["frequency_normalized"]
-                    self.doc_vectors[doc_id] = {"d": v}
+                    self.doc_vectors[doc_id] = {"d": v, "title": doc_title}
+            # except Exception:
+            #     print ("Error while creating doc vectors. Still can continue")
 
             self.word_index[word] = current_word_num
             current_word_num += 1
@@ -149,7 +154,8 @@ class Search:
         # Calculate cosine angles and create doc list with ranks
         for i in doc_vectors:
             doc_vector = doc_vectors[i]["d"]["d"]
-            doc_ranks.append((self._angle_between_vectors(query_vector, doc_vector), i))
+            doc_title = doc_vectors[i]["d"]["title"]
+            doc_ranks.append((self._angle_between_vectors(query_vector, doc_vector), {"url": i, "title": doc_title}))
 
         # Get top k*num_pages using quick select
         s = self.utils.quick_select(doc_ranks, top_k*page_number, lambda x,y: x[0] < y[0])
@@ -165,5 +171,5 @@ if __name__ == "__main__":
     q = "maser of applied computing"
     q_processed = s._get_words_from_query(q)
 
-    for i in (s.search(q,20, page_number=2)):
+    for i in (s.search(q,20, page_number=1)):
         print (i)

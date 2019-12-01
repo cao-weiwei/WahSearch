@@ -70,4 +70,4 @@ class Utils:
             elif i > k and i>0: # Same as i<n-1 condition
                 r = i-1
             else:
-                return (sorted(arr[:i]))
+                return (sorted(arr[:i], key=lambda x: x[0]))
