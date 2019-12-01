@@ -13,7 +13,21 @@ spell_suggestions = SpellSuggestion()
 @app.route('/')
 def hello_world():
     return 'Hello World!'
+    
+@app.route('/search', methods=['GET', 'POST'])
+def search_keywords():
+    if request.method == 'GET':
+        keywords = request.args.get("keywords")
+        page_number_query = int(request.args.get("page_number"))
+        links_per_page = int(request.args.get("per_page"))
 
+        s = Search()
+        search_results = []
+        page_indexer = 1
+        
+        ans = s.search(keywords, links_per_page, page_number=page_number_query)
+    
+        return json.dumps(ans)
 
 @app.route('/suggestion', methods=['GET', 'POST'])
 def suggested_keywords():
