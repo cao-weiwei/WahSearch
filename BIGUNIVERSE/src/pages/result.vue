@@ -100,7 +100,6 @@ export default {
                   for (let i of res.data) {
                       dic.push({value: i})
                   }
-
                   cb(dic)
               }
           })
