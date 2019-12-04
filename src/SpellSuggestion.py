@@ -6,9 +6,8 @@ import re
 import string
 from collections import Counter
 from Trie import Trie
-from english_words import english_words_set
 
-hard_disk = "./Hard_disk.txt"
+english_words = "./words_alpha.txt"
 
 
 class SpellSuggestion(object):
@@ -16,9 +15,12 @@ class SpellSuggestion(object):
         """ initialize the WORDS dictionary which the key is a word and the value is the occurrences of the key  """
         self.trie = Trie()
         self.regex = regex
-        # with open(hard_disk, "r") as f:  # Create a dictionary for storing all the words and its occurrences
-        #     self.WORDS = Counter(self.words_token(f.read()))
-        self.WORDS = Counter(english_words_set)
+
+        with open(english_words, "r") as f:  # Create a dictionary for storing all the words and its occurrences
+            self.WORDS = Counter(self.words_token(f.read()))
+
+        for word in self.WORDS.keys():  # put all the words in Trie
+            self.trie.insert(word)
 
     def words_token(self, text):
         """ extract all the words from text with lowercase """
@@ -40,7 +42,7 @@ class SpellSuggestion(object):
         transposes = [L + R[1] + R[0] + R[2:] for L, R in splits if len(R) > 1]
         replaces = [L + c + R[1:] for L, R in splits if R for c in letters]
         inserts = [L + c + R for L, R in splits for c in letters]
-        return set(deletes + transposes + replaces + inserts)
+        return set(replaces + deletes + transposes + inserts)
 
     def edit_distance_2(self, word):
         """ get all combinations from the given word which edit distance is 2 """
@@ -49,11 +51,6 @@ class SpellSuggestion(object):
     def shown(self, words):
         """ return words that are shown in WORDS based on edit distance which is ether 1 or 2 """
         return set(w for w in words if w in self.WORDS)
-        # tmp = []
-        # for w in words:
-        #     if w in self.WORDS:
-        #         tmp.append(w)
-        # return set(tmp)
 
     def candidates(self, word):
         """ get all the candidate words from the given word """
@@ -75,26 +72,25 @@ class SpellSuggestion(object):
 
     def auto_completer(self, prefix, top=5):
         """ return number of top auto complete suggestion according the prefix """
-        for word in self.WORDS.keys():  # put all the words in Trie
-            self.trie.insert(word)
         return self.trie.autocomplete(prefix, top)  # get the top word accourding to the given prefix
 
 
-# if __name__ == '__main__':
-    # raw_strings = ["h", "harb", "harb d", "harb dis"]
+if __name__ == '__main__':
+    raw_strings = ["master of comp"]
 
-    # print("*" * 30)
-    # test = SpellSuggestion()
+    print("*" * 30)
+    test = SpellSuggestion()
     # test.probability_of_word("the")
     # input_word = input("Please type a keyword >>> ")
     # print("Did you mean: {} or still use {} ?".format(test.spell_checker(input_word), input_word))
 
-    # regex_word = r"[\w]+"
-    # for raw_string in raw_strings:
-    #     print("raw words: {}".format(raw_string))
-    #     raw_words = re.findall(regex_word, raw_string)  # remove non-letter chars
-    #     words_for_spell_checker = " ".join(raw_words[:-1])  # spilt the raw_string with the last space
-    #     words_for_auto_completer = raw_words[-1]
-    #     if words_for_spell_checker: # if user type a space, then check the form words
-    #         print("Did you mean: {}".format(test.spell_checker(words_for_spell_checker)))
-    #     print("Suggestions: {} \n".format(test.auto_completer(words_for_auto_completer)))
+    regex_word = r"[\w]+"
+    for raw_string in raw_strings:
+        print("raw words: {}".format(raw_string))
+        raw_words = re.findall(regex_word, raw_string)  # remove non-letter chars
+        words_for_spell_checker = " ".join(raw_words[:-1])  # spilt the raw_string with the last space
+        words_for_auto_completer = raw_words[-1]
+        if words_for_spell_checker: # if user type a space, then check the form words
+            print("Spell checker: {}".format(test.spell_checker(words_for_spell_checker)))
+        print("Suggestions: {} \n".format(test.auto_completer(words_for_auto_completer)))
+
